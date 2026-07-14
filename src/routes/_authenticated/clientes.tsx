@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 type Customer = {
   id: string; name: string; email: string | null; phone: string | null;
-  cpf_cnpj: string | null; city: string | null; state: string | null;
+  document: string | null; city: string | null; state: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
 });
 
-const empty = { id: "", name: "", email: "", phone: "", cpf_cnpj: "", city: "", state: "" };
+const empty = { id: "", name: "", email: "", phone: "", document: "", city: "", state: "" };
 
 function ClientesPage() {
   const qc = useQueryClient();
@@ -33,7 +33,7 @@ function ClientesPage() {
     queryKey: ["customers", search],
     queryFn: async () => {
       let q = supabase.from("customers").select("*").order("name").limit(200);
-      if (search.trim()) q = q.or(`name.ilike.%${search}%,cpf_cnpj.ilike.%${search}%,phone.ilike.%${search}%`);
+      if (search.trim()) q = q.or(`name.ilike.%${search}%,document.ilike.%${search}%,phone.ilike.%${search}%`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Customer[];
@@ -45,7 +45,7 @@ function ClientesPage() {
       const payload = {
         name: form.name,
         email: form.email || null, phone: form.phone || null,
-        cpf_cnpj: form.cpf_cnpj || null, city: form.city || null, state: form.state || null,
+        document: form.document || null, city: form.city || null, state: form.state || null,
       };
       if (form.id) {
         const { error } = await supabase.from("customers").update(payload).eq("id", form.id);
@@ -75,7 +75,7 @@ function ClientesPage() {
   const edit = (c: Customer) => {
     setForm({
       id: c.id, name: c.name, email: c.email ?? "", phone: c.phone ?? "",
-      cpf_cnpj: c.cpf_cnpj ?? "", city: c.city ?? "", state: c.state ?? "",
+      document: c.document ?? "", city: c.city ?? "", state: c.state ?? "",
     });
     setOpen(true);
   };
@@ -95,7 +95,7 @@ function ClientesPage() {
             <DialogHeader><DialogTitle>{form.id ? "Editar cliente" : "Novo cliente"}</DialogTitle></DialogHeader>
             <div className="grid gap-3 grid-cols-2">
               <div className="col-span-2 space-y-1.5"><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>CPF/CNPJ</Label><Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>CPF/CNPJ</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
               <div className="space-y-1.5"><Label>Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
               <div className="col-span-2 space-y-1.5"><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div className="space-y-1.5"><Label>Cidade</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
@@ -139,7 +139,7 @@ function ClientesPage() {
                       <span className="font-medium">{c.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{c.cpf_cnpj ?? "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{c.document ?? "—"}</TableCell>
                   <TableCell className="text-sm">
                     {c.phone && <div>{c.phone}</div>}
                     {c.email && <div className="text-xs text-muted-foreground">{c.email}</div>}
