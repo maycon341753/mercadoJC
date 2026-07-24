@@ -8,6 +8,10 @@ import {
   LogOut,
   Store,
   Bell,
+  Wallet,
+  Boxes,
+  ShieldCheck,
+  FileBarChart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,8 +43,15 @@ const mainNav: NavItem[] = [
 
 const catalogoNav: NavItem[] = [
   { title: "Produtos", url: "/produtos", icon: Package },
+  { title: "Estoque", url: "/estoque", icon: Boxes },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Vendas", url: "/vendas", icon: Receipt },
+];
+
+const gestaoNav: NavItem[] = [
+  { title: "Financeiro", url: "/financeiro", icon: Wallet },
+  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
+  { title: "Auditoria", url: "/auditoria", icon: ShieldCheck },
 ];
 
 function AppSidebar() {
@@ -87,11 +98,12 @@ function AppSidebar() {
       <SidebarContent>
         {renderGroup("Operação", mainNav)}
         {renderGroup("Cadastros", catalogoNav)}
+        {renderGroup("Gestão", gestaoNav)}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         {!collapsed && (
           <div className="px-2 py-2 text-[10px] text-sidebar-foreground/50">
-            v1.0.0 • Fase 1
+            v2.0.0 • Completo
           </div>
         )}
       </SidebarFooter>
