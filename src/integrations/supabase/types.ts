@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
@@ -97,6 +130,65 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      financial_entries: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          sale_id: string | null
+          status: Database["public"]["Enums"]["financial_status"]
+          type: Database["public"]["Enums"]["financial_type"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sale_id?: string | null
+          status?: Database["public"]["Enums"]["financial_status"]
+          type: Database["public"]["Enums"]["financial_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sale_id?: string | null
+          status?: Database["public"]["Enums"]["financial_status"]
+          type?: Database["public"]["Enums"]["financial_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -303,6 +395,57 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          reason: string | null
+          sale_id: string | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity: number
+          reason?: string | null
+          sale_id?: string | null
+          type: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          sale_id?: string | null
+          type?: Database["public"]["Enums"]["stock_movement_type"]
+          unit_cost?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -340,8 +483,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "gerente" | "caixa" | "estoquista" | "financeiro"
+      financial_status: "pendente" | "pago" | "cancelado"
+      financial_type: "receita" | "despesa"
       payment_method: "dinheiro" | "pix" | "credito" | "debito" | "vale"
       sale_status: "concluida" | "cancelada" | "devolvida"
+      stock_movement_type: "entrada" | "saida" | "ajuste" | "perda"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -470,8 +616,11 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gerente", "caixa", "estoquista", "financeiro"],
+      financial_status: ["pendente", "pago", "cancelado"],
+      financial_type: ["receita", "despesa"],
       payment_method: ["dinheiro", "pix", "credito", "debito", "vale"],
       sale_status: ["concluida", "cancelada", "devolvida"],
+      stock_movement_type: ["entrada", "saida", "ajuste", "perda"],
     },
   },
 } as const
