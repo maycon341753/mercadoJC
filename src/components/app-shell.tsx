@@ -8,6 +8,10 @@ import {
   LogOut,
   Store,
   Bell,
+  Wallet,
+  Boxes,
+  ShieldCheck,
+  FileBarChart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,8 +43,15 @@ const mainNav: NavItem[] = [
 
 const catalogoNav: NavItem[] = [
   { title: "Produtos", url: "/produtos", icon: Package },
+  { title: "Estoque", url: "/estoque", icon: Boxes },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Vendas", url: "/vendas", icon: Receipt },
+];
+
+const gestaoNav: NavItem[] = [
+  { title: "Financeiro", url: "/financeiro", icon: Wallet },
+  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
+  { title: "Auditoria", url: "/auditoria", icon: ShieldCheck },
 ];
 
 function AppSidebar() {

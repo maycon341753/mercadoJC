@@ -103,12 +103,12 @@ function RelatoriosPage() {
       desc: "Base completa de clientes cadastrados",
       pdf: () => run("clientes-pdf", async () => {
         const { data, error } = await supabase.from("customers")
-          .select("name, email, phone, city, state, cpf_cnpj").order("name");
+          .select("name, email, phone, city, state, document").order("name");
         if (error) throw error;
         exportPDF({ title: "Clientes", subtitle: `Gerado em ${dateFmt(today)}`,
           columns: ["Nome", "CPF/CNPJ", "Email", "Telefone", "Cidade/UF"],
           rows: (data ?? []).map((c) => [
-            c.name, c.cpf_cnpj ?? "-", c.email ?? "-", c.phone ?? "-",
+            c.name, c.document ?? "-", c.email ?? "-", c.phone ?? "-",
             [c.city, c.state].filter(Boolean).join("/") || "-",
           ]),
           filename: `clientes-${today}` });
