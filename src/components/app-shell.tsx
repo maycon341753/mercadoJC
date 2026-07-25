@@ -12,6 +12,7 @@ import {
   Boxes,
   ShieldCheck,
   FileBarChart,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const catalogoNav: NavItem[] = [
 
 const gestaoNav: NavItem[] = [
   { title: "Financeiro", url: "/financeiro", icon: Wallet },
+  { title: "Indicadores", url: "/indicadores", icon: BarChart3 },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
   { title: "Auditoria", url: "/auditoria", icon: ShieldCheck },
 ];
