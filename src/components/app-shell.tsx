@@ -12,6 +12,7 @@ import {
   Boxes,
   ShieldCheck,
   FileBarChart,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
