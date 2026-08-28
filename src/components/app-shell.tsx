@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   FileBarChart,
   BarChart3,
+  Tags,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const mainNav: NavItem[] = [
 
 const catalogoNav: NavItem[] = [
   { title: "Produtos", url: "/produtos", icon: Package },
+  { title: "Categorias", url: "/categorias", icon: Tags },
   { title: "Estoque", url: "/estoque", icon: Boxes },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Vendas", url: "/vendas", icon: Receipt },
