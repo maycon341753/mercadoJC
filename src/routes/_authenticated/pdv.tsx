@@ -8,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Plus, Minus, ShoppingCart, Search, X, Check, Package } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Search, X, Check, Package, Printer } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
+import { printReceipt, type ReceiptData } from "@/lib/receipt";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type Product = {
   id: string; name: string; sku: string | null; barcode: string | null;
   sale_price: number; promo_price: number | null; stock: number; unit: string;
+  image_url: string | null;
 };
 type CartItem = { product: Product; qty: number };
 
@@ -30,12 +34,16 @@ function PDV() {
   const [payment, setPayment] = useState<"dinheiro" | "pix" | "credito" | "debito" | "vale">("dinheiro");
   const [discount, setDiscount] = useState(0);
   const [finalizing, setFinalizing] = useState(false);
+  const [received, setReceived] = useState(0);
+  const [autoPrint, setAutoPrint] = useState(true);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
+  const [lastScanned, setLastScanned] = useState<Product | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products-pdv", search],
     queryFn: async () => {
-      let q = supabase.from("products").select("id, name, sku, barcode, sale_price, promo_price, stock, unit").eq("active", true).limit(30);
+      let q = supabase.from("products").select("id, name, sku, barcode, sale_price, promo_price, stock, unit, image_url").eq("active", true).limit(30);
       if (search.trim()) {
         q = q.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.eq.${search}`);
       }
@@ -48,6 +56,7 @@ function PDV() {
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   const addToCart = (p: Product) => {
+    setLastScanned(p);
     setCart((c) => {
       const i = c.findIndex((x) => x.product.id === p.id);
       if (i >= 0) { const n = [...c]; n[i] = { ...n[i], qty: n[i].qty + 1 }; return n; }
@@ -61,7 +70,7 @@ function PDV() {
     setCart((c) => c.map((x) => x.product.id === id ? { ...x, qty: Math.max(1, qty) } : x));
   };
   const removeItem = (id: string) => setCart((c) => c.filter((x) => x.product.id !== id));
-  const clearCart = () => { setCart([]); setDiscount(0); };
+  const clearCart = () => { setCart([]); setDiscount(0); setReceived(0); setLastScanned(null); };
 
   const price = (p: Product) => Number(p.promo_price ?? p.sale_price);
   const subtotal = cart.reduce((s, x) => s + price(x.product) * x.qty, 0);
@@ -97,6 +106,26 @@ function PDV() {
       const { error: ie } = await supabase.from("sale_items").insert(items);
       if (ie) throw ie;
 
+      const receipt: ReceiptData = {
+        saleNumber: sale.sale_number,
+        items: cart.map((x) => ({
+          name: x.product.name,
+          qty: x.qty,
+          unit_price: price(x.product),
+          total: price(x.product) * x.qty,
+        })),
+        subtotal,
+        discount,
+        total,
+        payment,
+        ...(payment === "dinheiro" && received > 0
+          ? { received, change: Math.max(0, received - total) }
+          : {}),
+        date: new Date(),
+      };
+      setLastReceipt(receipt);
+      if (autoPrint) printReceipt(receipt);
+
       toast.success(`Venda #${sale.sale_number} finalizada — ${brl(total)}`);
       clearCart();
       qc.invalidateQueries({ queryKey: ["products-pdv"] });
@@ -129,6 +158,23 @@ function PDV() {
             </div>
           </CardContent>
         </Card>
+        {lastScanned && (
+          <Card className="shadow-card border-primary/40">
+            <CardContent className="p-3 flex items-center gap-3">
+              <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary">
+                {lastScanned.image_url
+                  ? <img src={lastScanned.image_url} alt={lastScanned.name} className="size-full object-cover" />
+                  : <Package className="size-7" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Último item bipado</p>
+                <p className="font-semibold truncate">{lastScanned.name}</p>
+                <p className="text-lg font-bold text-primary">{brl(price(lastScanned))}</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setLastScanned(null)}><X className="size-4" /></Button>
+            </CardContent>
+          </Card>
+        )}
         <Card className="shadow-card flex-1 min-h-0">
           <CardContent className="p-3 h-full">
             <ScrollArea className="h-full pr-2">
@@ -140,8 +186,10 @@ function PDV() {
                     className="text-left rounded-lg border bg-card p-3 hover:border-primary hover:shadow-elegant transition group"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                        <Package className="size-4" />
+                      <div className="flex size-10 items-center justify-center overflow-hidden rounded-md bg-primary/10 text-primary">
+                        {p.image_url
+                          ? <img src={p.image_url} alt={p.name} loading="lazy" className="size-full object-cover" />
+                          : <Package className="size-4" />}
                       </div>
                       <Badge variant="secondary" className="text-[10px]">{p.unit}</Badge>
                     </div>
@@ -185,6 +233,11 @@ function PDV() {
               )}
               {cart.map((x) => (
                 <div key={x.product.id} className="p-3 flex items-center gap-2">
+                  <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                    {x.product.image_url
+                      ? <img src={x.product.image_url} alt={x.product.name} className="size-full object-cover" />
+                      : <Package className="size-4 text-muted-foreground" />}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{x.product.name}</p>
                     <p className="text-xs text-muted-foreground">{brl(price(x.product))} × {x.qty}</p>
@@ -240,6 +293,31 @@ function PDV() {
                 <SelectItem value="vale">🎫 Vale</SelectItem>
               </SelectContent>
             </Select>
+            {payment === "dinheiro" && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground flex-1">Valor recebido</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    className="w-24 h-8 text-right"
+                    value={received || ""}
+                    onChange={(e) => setReceived(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+                {received > 0 && (
+                  <div className="flex justify-between text-sm font-medium">
+                    <span className="text-muted-foreground">Troco</span>
+                    <span>{brl(Math.max(0, received - total))}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Switch id="autoprint" checked={autoPrint} onCheckedChange={setAutoPrint} />
+              <Label htmlFor="autoprint" className="text-sm text-muted-foreground">Imprimir cupom automaticamente</Label>
+            </div>
             <Button
               className="w-full h-12 text-base font-bold bg-gradient-primary shadow-elegant"
               onClick={finalize}
@@ -247,6 +325,11 @@ function PDV() {
             >
               <Check className="size-5 mr-2" /> Finalizar Venda
             </Button>
+            {lastReceipt && (
+              <Button variant="outline" className="w-full" onClick={() => printReceipt(lastReceipt)}>
+                <Printer className="size-4 mr-2" /> Reimprimir cupom #{lastReceipt.saleNumber}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
