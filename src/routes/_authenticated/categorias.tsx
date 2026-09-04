@@ -50,7 +50,7 @@ function CategoriasPage() {
   });
 
   // contagem de produtos por categoria
-  const { data: counts = [] } = useQuery({
+  const { data: counts = {} } = useQuery({
     queryKey: ["category-counts"],
     queryFn: async () => {
       const { data, error } = await supabase
