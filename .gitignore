@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Lock alternativo (projeto usa package-lock.json)
+bun.lock
+
 # Environment
 .env
 .env.*
