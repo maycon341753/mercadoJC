@@ -35,6 +35,7 @@ function PDV() {
   const [discount, setDiscount] = useState(0);
   const [finalizing, setFinalizing] = useState(false);
   const [received, setReceived] = useState(0);
+  const [receivedDisplay, setReceivedDisplay] = useState("");
   const [autoPrint, setAutoPrint] = useState(true);
   const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
   const [lastScanned, setLastScanned] = useState<Product | null>(null);
@@ -70,7 +71,6 @@ function PDV() {
     setCart((c) => c.map((x) => x.product.id === id ? { ...x, qty: Math.max(1, qty) } : x));
   };
   const removeItem = (id: string) => setCart((c) => c.filter((x) => x.product.id !== id));
-  const clearCart = () => { setCart([]); setDiscount(0); setReceived(0); setLastScanned(null); };
 
   const price = (p: Product) => Number(p.promo_price ?? p.sale_price);
   const subtotal = cart.reduce((s, x) => s + price(x.product) * x.qty, 0);
@@ -136,6 +136,38 @@ function PDV() {
     } finally {
       setFinalizing(false);
     }
+  };
+
+  const parseBrlInput = (raw: string): number => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return 0;
+    const value = Number(digits) / 100;
+    return Math.max(0, Number(value.toFixed(2)));
+  };
+
+  const formatBrlInput = (amount: number): string => {
+    if (!isFinite(amount) || amount <= 0) return "";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const onReceivedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseBrlInput(e.target.value);
+    setReceived(value);
+    setReceivedDisplay(formatBrlInput(value));
+  };
+
+  const clearCart = () => {
+    setCart([]);
+    setDiscount(0);
+    setReceived(0);
+    setReceivedDisplay("");
+    setPayment("dinheiro");
+    setLastScanned(null);
   };
 
   return (
@@ -298,12 +330,18 @@ function PDV() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground flex-1">Valor recebido</span>
                   <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    className="w-24 h-8 text-right"
-                    value={received || ""}
-                    onChange={(e) => setReceived(Math.max(0, Number(e.target.value) || 0))}
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="R$ 0,00"
+                    className="w-36 h-8 text-right font-semibold tabular-nums"
+                    value={receivedDisplay}
+                    onChange={onReceivedChange}
+                    onFocus={(e) => {
+                      const v = e.target.value;
+                      if (!v) return;
+                      requestAnimationFrame(() => e.target.setSelectionRange(v.length, v.length));
+                    }}
                   />
                 </div>
                 {received > 0 && (
