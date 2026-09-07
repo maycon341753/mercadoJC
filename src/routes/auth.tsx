@@ -83,7 +83,7 @@ function AuthPage() {
         toast.success("Bem-vindo de volta!", { description: "Redirecionando..." });
         navigate({ to: "/dashboard", replace: true });
       } else if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -91,13 +91,41 @@ function AuthPage() {
             data: { full_name: name.trim() },
           },
         });
-        if (error) throw error;
-        toast.success("Conta criada!", {
-          description: "Confirme seu e-mail para ativar a conta. Se o e-mail de confirmação não chegar, entre em contato com o administrador.",
+        if (signupError) throw signupError;
+
+        const session = signupData.session;
+        if (session) {
+          toast.success("Conta criada com sucesso!", {
+            description: "Bem-vindo(a) ao Mercado JC! Redirecionando...",
+          });
+          navigate({ to: "/dashboard", replace: true });
+          return;
+        }
+
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
         });
-        setMode("login");
-        setConfirmPassword("");
-        setPassword("");
+        if (loginError) {
+          if (loginError.message.toLowerCase().includes("email not confirmed")) {
+            toast.success("Conta criada!", {
+              description: "Sua conta foi criada. Aguarde alguns segundos e tente fazer login.",
+            });
+          } else {
+            toast.success("Conta criada!", {
+              description: "Você já pode fazer login usando seu e-mail e senha.",
+            });
+          }
+          setMode("login");
+          setConfirmPassword("");
+          setPassword("");
+          return;
+        }
+
+        toast.success("Conta criada com sucesso!", {
+          description: "Bem-vindo(a) ao Mercado JC! Redirecionando...",
+        });
+        navigate({ to: "/dashboard", replace: true });
         setName("");
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
