@@ -1,13 +1,27 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   ssr: false,
-  beforeLoad: async () => {
-    if (typeof window === "undefined") {
-      throw redirect({ to: "/auth" });
-    }
-    const { data } = await supabase.auth.getSession();
-    throw redirect({ to: data.session ? "/dashboard" : "/auth", replace: true });
-  },
+  component: RootRedirect,
 });
+
+function RootRedirect() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    navigate({ to: user ? "/dashboard" : "/auth", replace: true });
+  }, [user, loading, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+      <div className="flex flex-col items-center gap-3">
+        <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">Carregando...</p>
+      </div>
+    </div>
+  );
+}
