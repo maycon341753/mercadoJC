@@ -1,0 +1,72 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+node_modules
+dist
+dist-ssr
+.output
+.vinxi
+.tanstack/**
+.nitro
+*.local
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+
+# Vercel
+.vercel
+
+# Build output
+dist/
+.output/
+
+# Temporary log files (session)
+_bat2.log
+_bat_install.log
+_explicit_install.log
+_install_done.flag
+_install_transcript.log
+_ls.json
+_npm_direct.log
+_npm_install_progress.log
+_npm_ls.log
+_npm_output.log
+_npm_ping.log
+_server.log
+install_run.log
+npm_install.log
+npm_install_output.log
+npm_stderr.log
+npm_stdout.log
+npm_test.log
+_install.bat
+_install.ps1
+_install2.bat
+_install3.bat
+_install3.log
+_run_install.ps1
+bun.lock.bak
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
