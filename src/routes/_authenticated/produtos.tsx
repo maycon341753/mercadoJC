@@ -21,6 +21,7 @@ type Product = {
   id: string; sku: string | null; barcode: string | null; name: string;
   sale_price: number; cost_price: number; stock: number; stock_min: number;
   unit: string; active: boolean; category_id: string | null; image_url: string | null;
+  expiry_date: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/produtos")({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/produtos")({
 const emptyForm = {
   id: "", sku: "", barcode: "", name: "", sale_price: 0, cost_price: 0,
   stock: 0, stock_min: 0, unit: "un", category_id: "", image_url: "",
+  expiry_date: "",
 };
 
 function ProdutosPage() {
