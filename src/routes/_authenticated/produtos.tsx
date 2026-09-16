@@ -106,6 +106,7 @@ function ProdutosPage() {
         unit: form.unit,
         category_id: form.category_id || null,
         image_url: form.image_url || null,
+        expiry_date: form.expiry_date || null,
       };
       if (form.id) {
         const { error } = await supabase.from("products").update(payload).eq("id", form.id);
@@ -138,6 +139,7 @@ function ProdutosPage() {
       sale_price: Number(p.sale_price), cost_price: Number(p.cost_price),
       stock: Number(p.stock), stock_min: Number(p.stock_min),
       unit: p.unit, category_id: p.category_id ?? "", image_url: p.image_url ?? "",
+      expiry_date: p.expiry_date ?? "",
     });
     setOpen(true);
   };
@@ -242,6 +244,10 @@ function ProdutosPage() {
               <div className="space-y-1.5">
                 <Label>Estoque mínimo</Label>
                 <Input type="number" step="0.001" value={form.stock_min} onChange={(e) => setForm({ ...form, stock_min: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data de vencimento</Label>
+                <Input type="date" value={form.expiry_date} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} />
               </div>
             </div>
             <DialogFooter>
