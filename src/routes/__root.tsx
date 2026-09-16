@@ -5,6 +5,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
@@ -32,7 +33,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
@@ -44,7 +45,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">Não foi possível carregar esta página.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => { router.invalidate(); reset?.(); }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Tentar novamente
