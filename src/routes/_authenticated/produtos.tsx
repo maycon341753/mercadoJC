@@ -263,6 +263,16 @@ function ProdutosPage() {
         </Dialog>
       </div>
 
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={(code) => {
+          setForm((f) => ({ ...f, barcode: code }));
+          void handleBarcodeLookup(code);
+        }}
+      />
+
+
       <Card className="shadow-card">
         <CardHeader className="pb-3">
           <div className="relative max-w-md">
