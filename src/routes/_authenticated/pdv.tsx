@@ -12,8 +12,6 @@ import { Trash2, Plus, Minus, ShoppingCart, Search, X, Check, Package, Printer }
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { printReceipt, type ReceiptData } from "@/lib/receipt";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 type Product = {
   id: string; name: string; sku: string | null; barcode: string | null;
@@ -36,7 +34,6 @@ function PDV() {
   const [finalizing, setFinalizing] = useState(false);
   const [received, setReceived] = useState(0);
   const [receivedDisplay, setReceivedDisplay] = useState("");
-  const [autoPrint, setAutoPrint] = useState(true);
   const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
   const [lastScanned, setLastScanned] = useState<Product | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -76,11 +73,25 @@ function PDV() {
   const subtotal = cart.reduce((s, x) => s + price(x.product) * x.qty, 0);
   const total = Math.max(0, subtotal - discount);
 
-  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && products.length > 0) {
-      e.preventDefault();
-      addToCart(products[0]);
-    }
+  // Bipagem: ao ler o código o item entra direto no carrinho.
+  const onSearchKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const code = search.trim();
+    if (!code) return;
+
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, sku, barcode, sale_price, promo_price, stock, unit, image_url")
+      .eq("active", true)
+      .or(`barcode.eq.${code},sku.eq.${code}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (data) { addToCart(data as Product); return; }
+    if (products.length > 0) { addToCart(products[0]); return; }
+    toast.error(`Produto não encontrado: ${code}`);
+    setSearch("");
   };
 
   const finalize = async () => {
@@ -89,7 +100,7 @@ function PDV() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const { data: sale, error: se } = await supabase.from("sales").insert({
-        cashier_id: userData.user!.id,
+        cashier_id: userData?.user?.id ?? null,
         subtotal, discount, total, payment_method: payment,
       }).select("id, sale_number").single();
       if (se) throw se;
@@ -124,7 +135,7 @@ function PDV() {
         date: new Date(),
       };
       setLastReceipt(receipt);
-      if (autoPrint) printReceipt(receipt);
+      printReceipt(receipt); // impressão automática (térmica 80mm)
 
       toast.success(`Venda #${sale.sale_number} finalizada — ${brl(total)}`);
       clearCart();
@@ -352,10 +363,9 @@ function PDV() {
                 )}
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <Switch id="autoprint" checked={autoPrint} onCheckedChange={setAutoPrint} />
-              <Label htmlFor="autoprint" className="text-sm text-muted-foreground">Imprimir cupom automaticamente</Label>
-            </div>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Printer className="size-3.5" /> O cupom é impresso automaticamente ao finalizar a venda.
+            </p>
             <Button
               className="w-full h-12 text-base font-bold bg-gradient-primary shadow-elegant"
               onClick={finalize}

@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789688805480,
+      "tag": "0000_create_debts",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789688851830,
+      "tag": "0001_open_pdv_access",
+      "breakpoints": true
+    }
+  ]
+}

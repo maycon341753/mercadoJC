@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Package, Edit, Trash2, Upload, ScanBarcode, Loader2 } from "lucide-react";
+import { Plus, Search, Package, Edit, Trash2, Upload, ScanBarcode, Loader2, Camera } from "lucide-react";
+import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
 import { brl, nfmt } from "@/lib/format";
 import { toast } from "sonner";
 import { uploadProductImage, lookupBarcode } from "@/lib/product-image";
@@ -42,6 +43,7 @@ function ProdutosPage() {
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
@@ -175,6 +177,9 @@ function ProdutosPage() {
                     onChange={(e) => setForm({ ...form, barcode: e.target.value })}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleBarcodeLookup(form.barcode); } }}
                   />
+                  <Button type="button" variant="outline" size="icon" onClick={() => setScannerOpen(true)} title="Bipar com a câmera do celular">
+                    <Camera className="size-4" />
+                  </Button>
                   <Button type="button" variant="outline" size="icon" disabled={scanning} onClick={() => void handleBarcodeLookup(form.barcode)} title="Buscar dados e foto pelo código">
                     {scanning ? <Loader2 className="size-4 animate-spin" /> : <ScanBarcode className="size-4" />}
                   </Button>
@@ -257,6 +262,16 @@ function ProdutosPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={(code) => {
+          setForm((f) => ({ ...f, barcode: code }));
+          void handleBarcodeLookup(code);
+        }}
+      />
+
 
       <Card className="shadow-card">
         <CardHeader className="pb-3">

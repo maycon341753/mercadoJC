@@ -131,6 +131,91 @@ export type Database = {
         }
         Relationships: []
       }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          debt_id: string
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          notes: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          debt_id: string
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          debt_id?: string
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          description: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_entries: {
         Row: {
           amount: number
