@@ -138,7 +138,7 @@ function PDV() {
         date: new Date(),
       };
       setLastReceipt(receipt);
-      if (autoPrint) printReceipt(receipt);
+      printReceipt(receipt); // impressão automática (térmica 80mm)
 
       toast.success(`Venda #${sale.sale_number} finalizada — ${brl(total)}`);
       clearCart();
