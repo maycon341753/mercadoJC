@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Package, Edit, Trash2, Upload, ScanBarcode, Loader2 } from "lucide-react";
+import { Plus, Search, Package, Edit, Trash2, Upload, ScanBarcode, Loader2, Camera } from "lucide-react";
+import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
 import { brl, nfmt } from "@/lib/format";
 import { toast } from "sonner";
 import { uploadProductImage, lookupBarcode } from "@/lib/product-image";
@@ -42,6 +43,7 @@ function ProdutosPage() {
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
