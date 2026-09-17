@@ -48,6 +48,7 @@ const catalogoNav: NavItem[] = [
   { title: "Categorias", url: "/categorias", icon: Tags },
   { title: "Estoque", url: "/estoque", icon: Boxes },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Devedores", url: "/devedores", icon: HandCoins },
   { title: "Vendas", url: "/vendas", icon: Receipt },
 ];
 
