@@ -175,6 +175,9 @@ function ProdutosPage() {
                     onChange={(e) => setForm({ ...form, barcode: e.target.value })}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleBarcodeLookup(form.barcode); } }}
                   />
+                  <Button type="button" variant="outline" size="icon" onClick={() => setScannerOpen(true)} title="Bipar com a câmera do celular">
+                    <Camera className="size-4" />
+                  </Button>
                   <Button type="button" variant="outline" size="icon" disabled={scanning} onClick={() => void handleBarcodeLookup(form.barcode)} title="Buscar dados e foto pelo código">
                     {scanning ? <Loader2 className="size-4 animate-spin" /> : <ScanBarcode className="size-4" />}
                   </Button>
