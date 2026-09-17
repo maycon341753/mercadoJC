@@ -103,7 +103,7 @@ function PDV() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const { data: sale, error: se } = await supabase.from("sales").insert({
-        cashier_id: userData.user!.id,
+        cashier_id: userData?.user?.id ?? null,
         subtotal, discount, total, payment_method: payment,
       }).select("id, sale_number").single();
       if (se) throw se;
