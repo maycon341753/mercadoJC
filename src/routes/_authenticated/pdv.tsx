@@ -366,10 +366,9 @@ function PDV() {
                 )}
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <Switch id="autoprint" checked={autoPrint} onCheckedChange={setAutoPrint} />
-              <Label htmlFor="autoprint" className="text-sm text-muted-foreground">Imprimir cupom automaticamente</Label>
-            </div>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Printer className="size-3.5" /> O cupom é impresso automaticamente ao finalizar a venda.
+            </p>
             <Button
               className="w-full h-12 text-base font-bold bg-gradient-primary shadow-elegant"
               onClick={finalize}
