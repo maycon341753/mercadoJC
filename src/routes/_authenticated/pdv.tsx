@@ -12,8 +12,6 @@ import { Trash2, Plus, Minus, ShoppingCart, Search, X, Check, Package, Printer }
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { printReceipt, type ReceiptData } from "@/lib/receipt";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 type Product = {
   id: string; name: string; sku: string | null; barcode: string | null;
