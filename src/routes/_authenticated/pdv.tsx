@@ -36,7 +36,6 @@ function PDV() {
   const [finalizing, setFinalizing] = useState(false);
   const [received, setReceived] = useState(0);
   const [receivedDisplay, setReceivedDisplay] = useState("");
-  const [autoPrint, setAutoPrint] = useState(true);
   const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
   const [lastScanned, setLastScanned] = useState<Product | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
