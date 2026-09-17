@@ -76,11 +76,25 @@ function PDV() {
   const subtotal = cart.reduce((s, x) => s + price(x.product) * x.qty, 0);
   const total = Math.max(0, subtotal - discount);
 
-  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && products.length > 0) {
-      e.preventDefault();
-      addToCart(products[0]);
-    }
+  // Bipagem: ao ler o código o item entra direto no carrinho.
+  const onSearchKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const code = search.trim();
+    if (!code) return;
+
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, sku, barcode, sale_price, promo_price, stock, unit, image_url")
+      .eq("active", true)
+      .or(`barcode.eq.${code},sku.eq.${code}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (data) { addToCart(data as Product); return; }
+    if (products.length > 0) { addToCart(products[0]); return; }
+    toast.error(`Produto não encontrado: ${code}`);
+    setSearch("");
   };
 
   const finalize = async () => {
