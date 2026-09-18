@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, SwitchCamera } from "lucide-react";
@@ -22,7 +23,19 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
     let stopped = false;
     let stream: MediaStream | undefined;
     let raf = 0;
-    const reader = new BrowserMultiFormatReader(undefined, { delayBetweenScanAttempts: 300 });
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.ITF,
+      BarcodeFormat.QR_CODE,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    const reader = new BrowserMultiFormatReader(hints);
 
     setError(null);
     setStarting(true);
@@ -37,7 +50,7 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } },
           audio: false,
         });
       } catch {
@@ -57,27 +70,42 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
       video.playsInline = true;
       await video.play().catch(() => undefined);
 
+      // Leitor nativo do navegador (Chrome/Android) — mais rápido e preciso quando disponível
+      type NativeDetector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
+      let native: NativeDetector | null = null;
+      const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => NativeDetector }).BarcodeDetector;
+      if (BD) {
+        try { native = new BD({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "qr_code"] }); }
+        catch { native = null; }
+      }
+
       const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const found = (code: string) => {
+        if (stopped || !code) return;
+        stopped = true;
+        onDetected(code);
+        onOpenChange(false);
+      };
       const loop = async () => {
         if (stopped || !videoRef.current) return;
         try {
-          if (ctx && video.readyState >= 2 && video.videoWidth > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const result = await reader.decodeFromCanvas(canvas);
-            if (result && !stopped) {
-              stopped = true;
-              onDetected(result.getText());
-              onOpenChange(false);
-              return;
+          if (video.readyState >= 2 && video.videoWidth > 0) {
+            if (native) {
+              const codes = await native.detect(video);
+              if (codes.length > 0) { found(codes[0].rawValue); return; }
+            } else if (ctx) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0);
+              const result = await reader.decodeFromCanvas(canvas);
+              if (result) { found(result.getText()); return; }
             }
           }
         } catch {
           // quadro sem código — segue tentando
         }
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 150));
         raf = requestAnimationFrame(() => void loop());
       };
       setStarting(false);
