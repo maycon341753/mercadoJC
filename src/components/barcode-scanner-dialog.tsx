@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, SwitchCamera } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -15,56 +15,111 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(true);
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
 
   useEffect(() => {
     if (!open) return;
     let stopped = false;
-    let controls: { stop: () => void } | undefined;
+    let stream: MediaStream | undefined;
+    let raf = 0;
+    const reader = new BrowserMultiFormatReader(undefined, { delayBetweenScanAttempts: 300 });
+
     setError(null);
     setStarting(true);
 
-    const reader = new BrowserMultiFormatReader();
-    reader
-      .decodeFromConstraints(
-        { video: { facingMode: { ideal: "environment" } } },
-        videoRef.current!,
-        (result) => {
-          if (result && !stopped) {
-            stopped = true;
-            controls?.stop();
-            onDetected(result.getText());
-            onOpenChange(false);
+    const start = async () => {
+      // Espera o dialog terminar de montar o <video>
+      for (let i = 0; i < 20 && !videoRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const video = videoRef.current;
+      if (!video || stopped) return;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        // fallback: qualquer câmera disponível
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }).catch((e) => {
+          throw e;
+        });
+      }
+      if (stopped) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      video.srcObject = stream;
+      video.setAttribute("autoplay", "true");
+      video.muted = true;
+      video.playsInline = true;
+      await video.play().catch(() => undefined);
+
+      const loop = async () => {
+        if (stopped || !videoRef.current) return;
+        try {
+          if (video.readyState >= 2 && video.videoWidth > 0) {
+            const result = await reader.decodeFromVideoElement(video);
+            if (result && !stopped) {
+              stopped = true;
+              onDetected(result.getText());
+              onOpenChange(false);
+              return;
+            }
           }
-        },
-      )
-      .then((c) => {
-        controls = c;
-        setStarting(false);
-        if (stopped) c.stop();
-      })
-      .catch((e) => {
-        setStarting(false);
-        setError(e instanceof Error ? e.message : "Não foi possível acessar a câmera");
-      });
+        } catch {
+          // quadro sem código — segue tentando
+        }
+        raf = requestAnimationFrame(() => void loop());
+      };
+      setStarting(false);
+      void loop();
+    };
+
+    start().catch((e) => {
+      if (stopped) return;
+      setStarting(false);
+      setError(
+        e instanceof DOMException && e.name === "NotAllowedError"
+          ? "Permissão de câmera negada. Libere o acesso nas configurações do navegador."
+          : e instanceof Error
+            ? e.message
+            : "Não foi possível acessar a câmera",
+      );
+    });
 
     return () => {
       stopped = true;
-      controls?.stop();
+      cancelAnimationFrame(raf);
+      stream?.getTracks().forEach((t) => t.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [open, onDetected, onOpenChange]);
+  }, [open, facing, onDetected, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Bipar com a câmera</DialogTitle></DialogHeader>
         <div className="relative overflow-hidden rounded-lg bg-black aspect-[4/3]">
-          <video ref={videoRef} className="size-full object-cover" muted playsInline />
+          <video ref={videoRef} className="size-full object-cover" autoPlay muted playsInline />
           <div className="pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-md border-2 border-primary/80" />
           {starting && (
             <div className="absolute inset-0 flex items-center justify-center text-white">
               <Loader2 className="size-6 animate-spin" />
             </div>
           )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="absolute right-2 top-2 size-8"
+            onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
+            aria-label="Trocar câmera"
+          >
+            <SwitchCamera className="size-4" />
+          </Button>
         </div>
         {error
           ? <p className="text-sm text-destructive">{error}</p>
