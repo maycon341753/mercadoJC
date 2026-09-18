@@ -70,27 +70,42 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
       video.playsInline = true;
       await video.play().catch(() => undefined);
 
+      // Leitor nativo do navegador (Chrome/Android) — mais rápido e preciso quando disponível
+      type NativeDetector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
+      let native: NativeDetector | null = null;
+      const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => NativeDetector }).BarcodeDetector;
+      if (BD) {
+        try { native = new BD({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "qr_code"] }); }
+        catch { native = null; }
+      }
+
       const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const found = (code: string) => {
+        if (stopped || !code) return;
+        stopped = true;
+        onDetected(code);
+        onOpenChange(false);
+      };
       const loop = async () => {
         if (stopped || !videoRef.current) return;
         try {
-          if (ctx && video.readyState >= 2 && video.videoWidth > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const result = await reader.decodeFromCanvas(canvas);
-            if (result && !stopped) {
-              stopped = true;
-              onDetected(result.getText());
-              onOpenChange(false);
-              return;
+          if (video.readyState >= 2 && video.videoWidth > 0) {
+            if (native) {
+              const codes = await native.detect(video);
+              if (codes.length > 0) { found(codes[0].rawValue); return; }
+            } else if (ctx) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0);
+              const result = await reader.decodeFromCanvas(canvas);
+              if (result) { found(result.getText()); return; }
             }
           }
         } catch {
           // quadro sem código — segue tentando
         }
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 150));
         raf = requestAnimationFrame(() => void loop());
       };
       setStarting(false);
