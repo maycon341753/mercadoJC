@@ -14,6 +14,7 @@ import {
   FileBarChart,
   BarChart3,
   Tags,
+  HandCoins,
 } from "lucide-react";
 import {
   Sidebar,
