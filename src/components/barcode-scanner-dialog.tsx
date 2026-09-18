@@ -57,11 +57,16 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
       video.playsInline = true;
       await video.play().catch(() => undefined);
 
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       const loop = async () => {
         if (stopped || !videoRef.current) return;
         try {
-          if (video.readyState >= 2 && video.videoWidth > 0) {
-            const result = await reader.decodeFromVideoElement(video);
+          if (ctx && video.readyState >= 2 && video.videoWidth > 0) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const result = await reader.decodeFromCanvas(canvas);
             if (result && !stopped) {
               stopped = true;
               onDetected(result.getText());
@@ -72,6 +77,7 @@ export function BarcodeScannerDialog({ open, onOpenChange, onDetected }: Props) 
         } catch {
           // quadro sem código — segue tentando
         }
+        await new Promise((r) => setTimeout(r, 250));
         raf = requestAnimationFrame(() => void loop());
       };
       setStarting(false);
