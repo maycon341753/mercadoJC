@@ -13,7 +13,7 @@ function RootRedirect() {
 
   useEffect(() => {
     if (loading) return;
-    navigate({ to: user ? "/dashboard" : "/auth", replace: true });
+    navigate({ to: user ? "/pdv" : "/auth", replace: true });
   }, [user, loading, navigate]);
 
   return (
