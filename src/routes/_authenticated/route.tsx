@@ -52,5 +52,9 @@ function AuthenticatedShell() {
     );
   }
 
+  if (!isPublic && user && unlockedPath !== pathname) {
+    return <PagePasswordGate email={user.email ?? ""} onUnlock={() => setUnlockedPath(pathname)} />;
+  }
+
   return <AppShell />;
 }
