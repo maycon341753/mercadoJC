@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PagePasswordGate } from "@/components/page-password-gate";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,11 +17,18 @@ function AuthenticatedShell() {
   const { user, loading } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const [unlockedPath, setUnlockedPath] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading || isPublic) return;
     if (!user) navigate({ to: "/auth", replace: true });
   }, [user, loading, isPublic, navigate]);
+
+  // Cada nova página protegida volta a exigir a senha.
+  useEffect(() => {
+    if (isPublic) return;
+    setUnlockedPath((prev) => (prev === pathname ? prev : null));
+  }, [pathname, isPublic]);
 
   if (!isPublic && loading) {
     return (
