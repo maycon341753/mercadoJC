@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 /** Rotas liberadas sem login (operação de caixa). */
-const PUBLIC_PATHS = ["/pdv"];
+const PUBLIC_PATHS = ["/pdv", "/produtos"];
 
 function AuthenticatedShell() {
   const navigate = useNavigate();
