@@ -32,7 +32,7 @@ function AuthPage() {
   useEffect(() => {
     setErrors({});
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+      if (data.session) navigate({ to: "/pdv", replace: true });
     });
   }, [navigate, mode]);
 
@@ -81,13 +81,13 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Bem-vindo de volta!", { description: "Redirecionando..." });
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/pdv", replace: true });
       } else if (mode === "signup") {
         const { data: signupData, error: signupError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/pdv`,
             data: { full_name: name.trim() },
           },
         });
@@ -98,7 +98,7 @@ function AuthPage() {
           toast.success("Conta criada com sucesso!", {
             description: "Bem-vindo(a) ao Mercado JC! Redirecionando...",
           });
-          navigate({ to: "/dashboard", replace: true });
+          navigate({ to: "/pdv", replace: true });
           return;
         }
 
@@ -125,7 +125,7 @@ function AuthPage() {
         toast.success("Conta criada com sucesso!", {
           description: "Bem-vindo(a) ao Mercado JC! Redirecionando...",
         });
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/pdv", replace: true });
         setName("");
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
