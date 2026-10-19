@@ -1,16 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { brl, dateTimeFmt } from "@/lib/format";
-import { Receipt, Search } from "lucide-react";
+import { Ban, Receipt, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/vendas")({
-  head: () => ({ meta: [{ title: "Vendas — Mercado JC ERP" }] }),
+  head: () => ({
+    meta: [
+      { title: "Vendas — Mercado JC ERP" },
+      { name: "description", content: "Histórico de vendas e cancelamento de transações do Mercado JC ERP" },
+      { property: "og:title", content: "Vendas — Mercado JC ERP" },
+      { property: "og:description", content: "Histórico de vendas e cancelamento de transações" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: VendasPage,
 });
 
@@ -20,6 +35,10 @@ const payLabels: Record<string, string> = {
 
 function VendasPage() {
   const [search, setSearch] = useState("");
+  const [toCancel, setToCancel] = useState<{ id: string; sale_number: number } | null>(null);
+  const [canceling, setCanceling] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data: sales = [] } = useQuery({
     queryKey: ["sales", search],
     queryFn: async () => {
@@ -32,6 +51,56 @@ function VendasPage() {
       return data ?? [];
     },
   });
+
+  const confirmCancel = async () => {
+    if (!toCancel) return;
+    setCanceling(true);
+    try {
+      const { data: items, error: itemsError } = await supabase
+        .from("sale_items")
+        .select("product_id, quantity")
+        .eq("sale_id", toCancel.id);
+      if (itemsError) throw itemsError;
+
+      // Devolve os itens ao estoque
+      const movements = (items ?? [])
+        .filter((i) => i.product_id)
+        .map((i) => ({
+          product_id: i.product_id as string,
+          type: "entrada" as const,
+          quantity: i.quantity,
+          reason: `Estorno venda #${toCancel.sale_number}`,
+        }));
+      if (movements.length > 0) {
+        const { error: mvError } = await supabase.from("stock_movements").insert(movements);
+        if (mvError) throw mvError;
+      }
+
+      // Remove a receita gerada automaticamente no Financeiro
+      const { error: finError } = await supabase
+        .from("financial_entries")
+        .delete()
+        .eq("sale_id", toCancel.id);
+      if (finError) throw finError;
+
+      // Marca a venda como cancelada
+      const { error: saleError } = await supabase
+        .from("sales")
+        .update({ status: "cancelada" })
+        .eq("id", toCancel.id);
+      if (saleError) throw saleError;
+
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
+      await queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+      await queryClient.invalidateQueries({ queryKey: ["financial-entries"] });
+      toast.success(`Venda #${toCancel.sale_number} cancelada. Estoque devolvido.`);
+      setToCancel(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao cancelar a venda.");
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -56,10 +125,11 @@ function VendasPage() {
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sales.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma venda</TableCell></TableRow>}
+              {sales.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma venda</TableCell></TableRow>}
               {sales.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>
@@ -79,12 +149,47 @@ function VendasPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-bold">{brl(s.total)}</TableCell>
+                  <TableCell className="text-right">
+                    {s.status === "concluida" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setToCancel({ id: s.id, sale_number: s.sale_number })}
+                      >
+                        <Ban className="size-4" /> Cancelar
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toCancel} onOpenChange={(open) => !open && setToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar venda #{toCancel?.sale_number}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A venda será marcada como cancelada, os itens voltarão para o estoque e a receita correspondente será removida do Financeiro. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={canceling}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={canceling}
+              onClick={(e) => { e.preventDefault(); confirmCancel(); }}
+            >
+              {canceling ? "Cancelando..." : "Cancelar venda"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
