@@ -51,7 +51,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
 <style>
   @page { size: 80mm auto; margin: 0; }
   * { box-sizing: border-box; }
-  body { width: 76mm; margin: 0 auto; padding: 4mm 2mm; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.35; color: #000; background: #fff; }
+  body { width: 76mm; margin: 0 auto; padding: 4mm 2mm; font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; line-height: 1.4; color: #000; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .c { text-align: center; }
   .r { text-align: right; }
   .b { font-weight: 700; }
