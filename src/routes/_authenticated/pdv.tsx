@@ -143,7 +143,9 @@ function PDV() {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["sales"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao finalizar venda");
+      const msg = (err as { message?: string })?.message;
+      console.error("Erro ao finalizar venda", err);
+      toast.error(msg ? `Erro ao finalizar venda: ${msg}` : "Erro ao finalizar venda — verifique a conexão e tente novamente");
     } finally {
       setFinalizing(false);
     }
