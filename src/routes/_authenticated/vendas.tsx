@@ -35,7 +35,7 @@ const payLabels: Record<string, string> = {
 
 function VendasPage() {
   const [search, setSearch] = useState("");
-  const [toCancel, setToCancel] = useState<{ id: string; sale_number: number } | null>(null);
+  const [toCancel, setToCancel] = useState<{ id: string; sale_number: number; created_at: string } | null>(null);
   const [canceling, setCanceling] = useState(false);
   const queryClient = useQueryClient();
 
@@ -52,8 +52,26 @@ function VendasPage() {
     },
   });
 
+  const CANCEL_DEADLINE_DAYS = 7;
+
+  const isPastDeadline = (createdAt: string) =>
+    Date.now() - new Date(createdAt).getTime() > CANCEL_DEADLINE_DAYS * 24 * 60 * 60 * 1000;
+
+  const requestCancel = (s: { id: string; sale_number: number; created_at: string }) => {
+    if (isPastDeadline(s.created_at)) {
+      toast.error(`Não é possível cancelar a venda #${s.sale_number}: o prazo de ${CANCEL_DEADLINE_DAYS} dias já passou.`);
+      return;
+    }
+    setToCancel(s);
+  };
+
   const confirmCancel = async () => {
     if (!toCancel) return;
+    if (isPastDeadline(toCancel.created_at)) {
+      toast.error(`Não é possível cancelar: o prazo de ${CANCEL_DEADLINE_DAYS} dias já passou.`);
+      setToCancel(null);
+      return;
+    }
     setCanceling(true);
     try {
       const { data: items, error: itemsError } = await supabase
@@ -155,7 +173,7 @@ function VendasPage() {
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => setToCancel({ id: s.id, sale_number: s.sale_number })}
+                        onClick={() => requestCancel({ id: s.id, sale_number: s.sale_number, created_at: s.created_at })}
                       >
                         <Ban className="size-4" /> Cancelar
                       </Button>
