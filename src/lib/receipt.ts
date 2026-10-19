@@ -55,7 +55,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
   .c { text-align: center; }
   .r { text-align: right; }
   .b { font-weight: 700; }
-  .big { font-size: 14px; }
+  .big { font-size: 15px; }
   hr { border: 0; border-top: 1px dashed #000; margin: 4px 0; }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 0; vertical-align: top; }
