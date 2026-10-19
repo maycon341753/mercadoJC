@@ -61,8 +61,8 @@ export function buildReceiptHtml(d: ReceiptData): string {
   td { padding: 0; vertical-align: top; }
   .nm { padding-top: 2px; }
   .q { white-space: nowrap; }
-  .tot { font-size: 15px; font-weight: 700; }
-  .sm { font-size: 9px; }
+  .tot { font-size: 16px; font-weight: 800; }
+  .sm { font-size: 10px; }
 </style></head><body>
   <div class="c b big">${COMPANY.name}</div>
   <div class="c sm">CNPJ ${COMPANY.cnpj}</div>
