@@ -51,18 +51,18 @@ export function buildReceiptHtml(d: ReceiptData): string {
 <style>
   @page { size: 80mm auto; margin: 0; }
   * { box-sizing: border-box; }
-  body { width: 76mm; margin: 0 auto; padding: 4mm 2mm; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.35; color: #000; background: #fff; }
+  body { width: 76mm; margin: 0 auto; padding: 4mm 2mm; font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; line-height: 1.4; color: #000; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .c { text-align: center; }
   .r { text-align: right; }
   .b { font-weight: 700; }
-  .big { font-size: 14px; }
+  .big { font-size: 15px; }
   hr { border: 0; border-top: 1px dashed #000; margin: 4px 0; }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 0; vertical-align: top; }
   .nm { padding-top: 2px; }
   .q { white-space: nowrap; }
-  .tot { font-size: 15px; font-weight: 700; }
-  .sm { font-size: 9px; }
+  .tot { font-size: 16px; font-weight: 800; }
+  .sm { font-size: 10px; }
 </style></head><body>
   <div class="c b big">${COMPANY.name}</div>
   <div class="c sm">CNPJ ${COMPANY.cnpj}</div>
